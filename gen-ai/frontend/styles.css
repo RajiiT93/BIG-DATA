@@ -1,0 +1,147 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, system-ui, sans-serif;
+  background: #f4f7fb;
+  color: #1f2937;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #eff3ff 0%, #f8fafc 100%);
+}
+
+.app-container {
+  width: min(1080px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 28px 0 64px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 2.5vw, 3rem);
+}
+
+p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 22px;
+  padding: 22px;
+  margin-bottom: 22px;
+  box-shadow: 0 16px 45px rgba(15, 23, 42, 0.05);
+}
+
+.upload-card form,
+.docs-controls,
+.field-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.upload-card input[type="file"] {
+  flex: 1 1 260px;
+}
+
+.upload-card button,
+.docs-controls button,
+#ask-button {
+  border: none;
+  background: #2563eb;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.16s ease, background 0.16s ease;
+}
+
+.upload-card button:hover,
+.docs-controls button:hover,
+#ask-button:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.documents-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.document-card {
+  border: 1px solid #e2e8f0;
+  padding: 14px;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.document-card h3 {
+  font-size: 1rem;
+  margin: 0 0 8px;
+}
+
+.document-card small {
+  color: #64748b;
+}
+
+textarea,
+select,
+input[type="text"] {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: #ffffff;
+  color: #111827;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.answer-card {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+}
+
+.hidden {
+  display: none;
+}
+
+.message {
+  margin-top: 12px;
+  color: #334155;
+}
+
+.hint {
+  margin-top: 12px;
+  color: #64748b;
+}
+
+@media (max-width: 600px) {
+  .upload-card form,
+  .docs-controls,
+  .field-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

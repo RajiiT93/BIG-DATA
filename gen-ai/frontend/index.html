@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chatbot Document AI</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <h1>Chatbot Document AI</h1>
+      <p>Upload un document PDF/DOCX, puis pose des questions sur son contenu.</p>
+    </header>
+
+    <section class="card upload-card">
+      <h2>1. Uploader un document</h2>
+      <form id="upload-form">
+        <input type="file" id="file-input" accept=".pdf,.docx" />
+        <button type="submit">Uploader</button>
+      </form>
+      <p id="upload-message" class="message"></p>
+    </section>
+
+    <section class="card docs-card">
+      <h2>2. Documents disponibles</h2>
+      <div class="docs-controls">
+        <button id="refresh-docs">Actualiser</button>
+        <input type="text" id="search-input" placeholder="Rechercher dans les documents" />
+        <button id="search-btn">Rechercher</button>
+      </div>
+      <div id="documents-list" class="documents-list"></div>
+      <p class="hint">Sélectionne un document pour poser une question spécifique.</p>
+    </section>
+
+    <section class="card ask-card">
+      <h2>3. Poser une question</h2>
+      <div class="field-group">
+        <label for="document-select">Document sélectionné</label>
+        <select id="document-select">
+          <option value="">Aucune - question générale</option>
+        </select>
+      </div>
+      <textarea id="question-input" rows="4" placeholder="Tape ta question ici..."></textarea>
+      <button id="ask-button">Envoyer la question</button>
+      <div id="answer-card" class="answer-card hidden">
+        <h3>Réponse</h3>
+        <pre id="answer-text"></pre>
+      </div>
+      <p id="ask-message" class="message"></p>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
