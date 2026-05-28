@@ -172,6 +172,40 @@ app.get('/search', (req, res) => {
   }
 });
 
+// Route SSE pour streaming (quickstart demo)
+app.get('/stream', (req, res) => {
+  const message = (req.query.message || '').toString().trim();
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders && res.flushHeaders();
+
+  // Simulated AI response in French
+  const fullResponse = `Voici une réponse simulée en français basée sur votre message : "${message}"\nMerci d'avoir testé le quickstart.`;
+  const tokens = fullResponse.split(/(\s+)/); // split but keep spaces as tokens
+
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i >= tokens.length) {
+      // signal end
+      res.write(`event: done\ndata: [DONE]\n\n`);
+      clearInterval(interval);
+      res.end();
+      return;
+    }
+
+    const chunk = tokens[i++];
+    // send as SSE data event
+    res.write(`data: ${chunk}\n\n`);
+  }, 40);
+
+  // client disconnect handling
+  req.on('close', () => {
+    clearInterval(interval);
+  });
+});
+
 if (fs.existsSync(frontendPath)) {
   app.get(/.*/, (req, res) => {
     res.sendFile(path.join(frontendPath, 'index.html'));
@@ -184,4 +218,20 @@ app.listen(PORT, async () => {
 
   // Test de connexion à Ollama
   await testOllamaConnection();
+  // Indexer les fichiers déjà présents dans uploads au démarrage
+  const uploadDir = path.join(__dirname, 'uploads');
+  if (fs.existsSync(uploadDir)) {
+    const files = fs.readdirSync(uploadDir);
+    for (const f of files) {
+      const p = path.join(uploadDir, f);
+      try {
+        if (fs.statSync(p).isFile()) {
+          console.log('📥 Traitement au démarrage du fichier:', f);
+          await documentProcessor.processFile(p);
+        }
+      } catch (e) {
+        console.error('Erreur lors du traitement au démarrage:', e);
+      }
+    }
+  }
 });

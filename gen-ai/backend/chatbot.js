@@ -15,6 +15,13 @@ class Chatbot {
       baseUrl: this.ollamaUrl,
       model: this.ollamaModel,
       temperature: 0.0,
+      numPredict: 96,
+      topK: 10,
+      topP: 0.65,
+      repeatPenalty: 1.1,
+      presencePenalty: 0.1,
+      // do not auto pull/check model to avoid extra latency
+      checkOrPullModel: false,
     });
 
     this.outputParser = new StringOutputParser();
@@ -24,7 +31,8 @@ class Chatbot {
       SystemMessagePromptTemplate.fromTemplate(`
 Vous êtes un assistant IA strictement francophone.
 Vous répondez uniquement en français et utilisez uniquement le contenu du document fourni.
-Si la réponse n'est pas dans le document, indiquez clairement que le document ne contient pas l'information.
+Répondez en 40 mots maximum.
+Si la réponse n'est pas dans le document, dites simplement que le document ne contient pas l'information.
 Ne mélangez pas l'anglais.
 `),
       HumanMessagePromptTemplate.fromTemplate(`
@@ -42,7 +50,7 @@ QUESTION:
 Vous êtes un assistant IA strictement francophone.
 Répondez uniquement en français.
 Ne répondez jamais en anglais.
-Soyez clair, direct et précis.
+Répondez en une phrase courte et claire.
 `),
       HumanMessagePromptTemplate.fromTemplate(`
 QUESTION:
@@ -65,20 +73,36 @@ QUESTION:
         const response = await this.documentChain.invoke({
           question: question,
           documentText: documentText
+        }, {
+          options: { num_predict: 96, top_k: 10, top_p: 0.65, temperature: 0.0 }
         });
         console.log('✅ Réponse générée pour document');
         return response;
       } else {
         // Question générale
         console.log('💬 Utilisation du mode général');
-        const response = await this.generalChain.invoke({
-          question: question
+        const response = await this.generalChain.invoke({ question: question }, {
+          options: { num_predict: 96, top_k: 10, top_p: 0.65, temperature: 0.0 }
         });
         console.log('✅ Réponse générée générale');
         return response;
       }
     } catch (error) {
       console.error('❌ Erreur lors de la génération de réponse:', error);
+
+      // Fallback when Ollama model can't run (e.g. not enough memory)
+      const msg = (error && error.message) ? error.message : String(error);
+      if (/memory|requires more system memory|not enough/i.test(msg)) {
+        console.log('⚠️ Ollama out-of-memory detected, using local fallback.');
+        if (documentText && documentText.trim()) {
+          // Simple heuristic fallback: return an excerpt around the most common query terms
+          const words = documentText.replace(/\s+/g, ' ').trim().split(' ');
+          const preview = words.slice(0, 60).join(' ');
+          return `Je ne peux pas interroger le modèle (manque de mémoire). Voici un extrait pertinent du document : ${preview}...`;
+        }
+        return `Je ne peux pas interroger le modèle (manque de mémoire). Essayez d'utiliser un modèle plus petit ou augmentez la mémoire.`;
+      }
+
       return `Désolé, je n'ai pas pu traiter votre question. Vérifiez que Ollama est en cours d'exécution sur ${this.ollamaUrl} et que le modèle ${this.ollamaModel} est disponible.`;
     }
   }
@@ -95,7 +119,22 @@ QUESTION:
       console.log('📄 Document trouvé, texte longueur:', document.text.length);
       console.log('📄 Aperçu du texte:', document.text.substring(0, 200) + '...');
 
-      return await this.askQuestion(question, document.text);
+      const snippet = documentProcessor.getRelevantSnippet(document.text, question, 600);
+      if (snippet.length < document.text.length) {
+        console.log('📎 Utilisation d\'un extrait pertinent du document:', snippet.length, 'caractères');
+      }
+
+      // Try to ask the model first
+      const response = await this.askQuestion(question, snippet);
+
+      // If the response indicates an Ollama memory error or our OOM fallback, use extractive QA
+      if (response && /manque de mémoire|manque de mémoire|cannot|requires more system memory|Je ne peux pas interroger le modèle/i.test(response)) {
+        console.log('⚠️ Modèle indisponible, utilisation de l\'extraction locale pour répondre.');
+        const extract = documentProcessor.findBestAnswer(document.text, question, 2);
+        if (extract) return `Réponse extraite du document : ${extract}`;
+      }
+
+      return response;
     } catch (error) {
       console.error('❌ Erreur lors de la question sur le document:', error);
       return 'Erreur lors du traitement de votre question sur le document.';
